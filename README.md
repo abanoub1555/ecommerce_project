@@ -1,4 +1,7 @@
 # ecommerce_project
+https://drive.google.com/drive/folders/1xLi8MocwfUDeOCYcjREcI2iVM1fqDvXI
+the link for the database 
+
 Order_item_fact 
 CREATE TABLE order_item_sales_fact (
     order_id VARCHAR(50),
