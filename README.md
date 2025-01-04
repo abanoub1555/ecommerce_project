@@ -288,7 +288,7 @@ Count(payment_installment)	Payment_installments
 
 i.	What is the average spending time for user for our ecommerce?
 
-ii.	What is the average spending time for user for our ecommerce?
+ii.	What is the frequency of purchase on each state?
 select count(test.order_fact.order_id) , test.user_dim_n.customer_state
 from 
 	test.order_fact
@@ -339,7 +339,7 @@ count(test.order_fact.order_id)	Customer_
 
 
 
-i.	Which logistic route that have heavy traffic in our ecommerce?
+i.	Which logistic route that have heavy traffic in our ecommerce?  (i thought this is the difference in date between pickup and delivery )
 
 
 SELECT AVG(DATEDIFF(
