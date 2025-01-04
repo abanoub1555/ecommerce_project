@@ -1,7 +1,3 @@
-# ecommerce_project
-https://drive.google.com/drive/folders/1xLi8MocwfUDeOCYcjREcI2iVM1fqDvXI
-the link for the database 
-
 Order_item_fact 
 CREATE TABLE order_item_sales_fact (
     order_id VARCHAR(50),
@@ -89,7 +85,7 @@ CREATE TABLE payment_fact (
 
 
 
-What is the peak season?
+1--- What is the peak season?
 Monthly 
 select count(test.order_fact.order_id)as OrderCount_monthly , test.date_dim.month_desc 
 from 
@@ -144,7 +140,7 @@ OrderCount_quarterly	querter
 
 
 
-i.	What time users are most likely make an order or using the ecommerce app?
+2--- What time users are most likely make an order or using the ecommerce app?
 select count(test.order_fact.order_id)as hourlyorders_count , test.time_dim_n.hour 
 from 
 	test.order_fact
@@ -206,7 +202,7 @@ hourlyorders_count	The hour
 
 
 
-i.	What is the preferred way to pay in the ecommerce?
+3---What is the preferred way to pay in the ecommerce?
 
 select count(test.payment_fact.payment_type) , test.payment_fact.payment_type
 from 
@@ -234,7 +230,7 @@ count(test.payment_fact.payment_type)	payment_type
 
 
 
-i.	How many installment is usually done when paying in the ecommerce?
+4--- How many installment is usually done when paying in the ecommerce?
 select count(test.payment_fact.payment_installments) , test.payment_fact.payment_installments
 from 
 	test.payment_fact
@@ -286,9 +282,9 @@ Count(payment_installment)	Payment_installments
 
 
 
-i.	What is the average spending time for user for our ecommerce?
+5---What is the average spending time for user for our ecommerce?
 
-ii.	What is the frequency of purchase on each state?
+6---What is the frequency of purchase on each state?
 select count(test.order_fact.order_id) , test.user_dim_n.customer_state
 from 
 	test.order_fact
@@ -339,9 +335,88 @@ count(test.order_fact.order_id)	Customer_
 
 
 
-i.	Which logistic route that have heavy traffic in our ecommerce?  (i thought this is the difference in date between pickup and delivery )
+7---Which logistic route that have heavy traffic in our ecommerce?
+
+select test.order_fact.user_id , test.order_fact.order_id,
+	test.user_dim_n.user_id , test.user_dim_n.customer_city,
+	test.order_item_sales_fact.seller_id , test.seller.seller_id ,test.seller.seller_city
+from 
+	test.order_fact
+join
+	test.user_dim_n
+join
+	test.order_item_sales_fact
+join
+	test.seller
+on 
+	test.order_fact.user_id=test.user_dim_n.user_id
+and 
+	test.order_fact.order_id = test.order_item_sales_fact.order_id
+and 
+	test.order_item_sales_fact.seller_id=test.seller.seller_id
 
 
+
+to set just the seller_city and the user_city 
+
+select test.order_fact.order_id,
+	test.user_dim_n.customer_city,
+	test.seller.seller_city
+from 
+	test.order_fact
+join
+	test.user_dim_n
+join
+	test.order_item_sales_fact
+join
+	test.seller
+on 
+	test.order_fact.user_id=test.user_dim_n.user_id
+and 
+	test.order_fact.order_id = test.order_item_sales_fact.order_id
+and 
+	test.order_item_sales_fact.seller_id=test.seller.seller_id
+
+8---How many late delivered order in our ecommerce? Are late order affecting the customer satisfaction?
+
+
+this (if I need to know the number of late orders)
+SELECT 
+    COUNT(*) AS row_count
+FROM 
+    test.order_fact
+JOIN 
+    test.feedback_fact 
+    ON test.order_fact.order_id = test.feedback_fact.order_id
+WHERE 
+    DATEDIFF(
+        STR_TO_DATE(test.order_fact.estimated_time_delivery_id, '%Y%m%d'),
+        STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d')
+    ) < 0;
+
+Result
+Count_of_lateorders
+6563
+
+And this measuring the average score fore the late orders 
+SELECT 
+    AVG(test.feedback_fact.feedback_score) AS avg_feedback_score
+FROM 
+    test.order_fact
+JOIN 
+    test.feedback_fact 
+    ON test.order_fact.order_id = test.feedback_fact.order_id
+WHERE 
+    DATEDIFF(
+        STR_TO_DATE(test.order_fact.estimated_time_delivery_id, '%Y%m%d'),
+        STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d')
+    ) < 0;
+
+Result
+avg_feedback_score
+2.2560
+
+9---How long are the delay for delivery / shipping process in each state?
 SELECT AVG(DATEDIFF(
     STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d'),
     STR_TO_DATE(test.order_fact.pickup_date_id, '%Y%m%d'))
@@ -391,54 +466,52 @@ date_diff	Customer_state
 
 
 
-
-i.	How many late delivered order in our ecommerce? Are late order affecting the customer satisfaction?
-
-SELECT DATEDIFF(
+10 ---How long are the difference between estimated delivery time and actual delivery time in each state?
+SELECT avg(DATEDIFF(
     STR_TO_DATE(test.order_fact.estimated_time_delivery_id, '%Y%m%d'),
     STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d')
-) AS date_diff,
-test.order_fact.order_id ,  test.order_fact.user_id ,test.feedback_fact.feedback_score 
+)) AS date_diff,
+test.user_dim_n.customer_state
 FROM test.order_fact
-join test.feedback_fact
-on test.order_fact.order_id=test.feedback_fact.order_id
-having date_diff < 0
+join test.user_dim_n
+on test.order_fact.user_id=test.user_dim_n.user_id
+group by test.user_dim_n.customer_state
 
+result
 
-and this (if I need to know the number of late orders)
-SELECT 
-    COUNT(*) AS row_count
-FROM 
-    test.order_fact
-JOIN 
-    test.feedback_fact 
-    ON test.order_fact.order_id = test.feedback_fact.order_id
-WHERE 
-    DATEDIFF(
-        STR_TO_DATE(test.order_fact.estimated_time_delivery_id, '%Y%m%d'),
-        STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d')
-    ) < 0;
-
-Result
-Count_of_lateorders
-6563
-
-And this measuring the average score fore the late orders 
-SELECT 
-    AVG(test.feedback_fact.feedback_score) AS avg_feedback_score
-FROM 
-    test.order_fact
-JOIN 
-    test.feedback_fact 
-    ON test.order_fact.order_id = test.feedback_fact.order_id
-WHERE 
-    DATEDIFF(
-        STR_TO_DATE(test.order_fact.estimated_time_delivery_id, '%Y%m%d'),
-        STR_TO_DATE(test.order_fact.delivered_date_id, '%Y%m%d')
-    ) < 0;
-
-Result
-avg_feedback_score
-2.2560
-
+Date_diff 	 User_state 
+10.9245	DI YOGYAKARTA
+11.0937	JAWA BARAT
+11.1155	BANTEN
+11.4369	MALUKU UTARA
+11.5172	BALI
+11.6325	JAWA TENGAH
+11.6908	JAWA TIMUR
+11.7539	SULAWESI TENGAH
+11.8023	JAMBI
+11.8630	LAMPUNG
+12.0873	KALIMANTAN TENGAH
+12.1456	GORONTALO
+12.2540	SUMATERA UTARA
+12.2904	SUMATERA SELATAN
+12.4160	DKI JAKARTA
+12.4909	KEPULAUAN BANGKA BELITUNG
+12.4936	KALIMANTAN UTARA
+12.5260	KALIMANTAN SELATAN
+12.5393	NUSA TENGGARA BARAT
+12.6035	KALIMANTAN TIMUR
+12.8242	SULAWESI UTARA
+12.8423	SULAWESI SELATAN
+12.8592	KALIMANTAN BARAT
+12.9901	RIAU
+13.0063	PAPUA
+13.0433	SULAWESI TENGGARA
+13.0835	KEPULAUAN RIAU
+13.1527	PAPUA BARAT
+13.1561	NUSA TENGGARA TIMUR
+13.2055	SUMATERA BARAT
+13.2516	SULAWESI BARAT
+13.6881	ACEH
+13.7174	BENGKULU
+14.0737	MALUKU
 
